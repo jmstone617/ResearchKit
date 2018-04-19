@@ -206,6 +206,7 @@ static NSString *localizedTitleForConsentSectionType(ORKConsentSectionType secti
         ORK_DECODE_ENUM(aDecoder, type);
         ORK_DECODE_OBJ_CLASS(aDecoder, title, NSString);
         ORK_DECODE_OBJ_CLASS(aDecoder, summary, NSString);
+        ORK_DECODE_OBJ_CLASS(aDecoder, htmlSummary, NSString);
         ORK_DECODE_OBJ_CLASS(aDecoder, content, NSString);
         ORK_DECODE_OBJ_CLASS(aDecoder, htmlContent, NSString);
         ORK_DECODE_URL_BOOKMARK(aDecoder, contentURL);
@@ -223,6 +224,7 @@ static NSString *localizedTitleForConsentSectionType(ORKConsentSectionType secti
     ORK_ENCODE_OBJ(aCoder, title);
     ORK_ENCODE_OBJ(aCoder, formalTitle);
     ORK_ENCODE_OBJ(aCoder, summary);
+    ORK_ENCODE_OBJ(aCoder, htmlSummary);
     ORK_ENCODE_OBJ(aCoder, content);
     ORK_ENCODE_OBJ(aCoder, htmlContent);
     ORK_ENCODE_URL_BOOKMARK(aCoder, contentURL);
@@ -241,6 +243,7 @@ static NSString *localizedTitleForConsentSectionType(ORKConsentSectionType secti
     return (ORKEqualObjects(self.title, castObject.title)
             && ORKEqualObjects(self.formalTitle, castObject.formalTitle)
             && ORKEqualObjects(self.summary, castObject.summary)
+            && ORKEqualObjects(self.htmlSummary, castObject.htmlSummary)
             && ORKEqualObjects(self.content, castObject.content)
             && ORKEqualObjects(self.htmlContent, castObject.htmlContent)
             && ORKEqualFileURLs(self.contentURL, castObject.contentURL)
@@ -260,6 +263,7 @@ static NSString *localizedTitleForConsentSectionType(ORKConsentSectionType secti
     sec.title = _title;
     sec.formalTitle = _formalTitle;
     sec.summary = _summary;
+    sec.htmlSummary = _htmlSummary;
     sec.content = _content;
     sec.htmlContent = _htmlContent;
     sec.contentURL = _contentURL;

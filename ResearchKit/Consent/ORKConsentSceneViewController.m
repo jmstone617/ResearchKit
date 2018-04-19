@@ -50,6 +50,7 @@
 @interface ORKConsentSceneView ()
 
 @property (nonatomic, strong) ORKConsentSection *consentSection;
+//@property (nonatomic, strong) UIWebView *summaryWebView;
 
 @end
 
@@ -72,11 +73,23 @@
     self.verticalCenteringEnabled = isOverview;
     self.continueHugsContent =  isOverview;
     
-    self.headerView.instructionLabel.hidden = ![consentSection summary].length;
+    self.headerView.instructionLabel.hidden = [consentSection htmlSummary].length || ![consentSection summary].length;
     self.headerView.captionLabel.text = consentSection.title;
     
     self.imageView.image = consentSection.image;
     self.headerView.instructionLabel.text = [consentSection summary];
+    
+    if ([consentSection htmlSummary].length) {
+        self.headerView.instructionWebView.backgroundColor = UIColor.clearColor;
+        self.headerView.instructionWebView.scrollView.backgroundColor = UIColor.clearColor;
+
+        NSString *htmlSummary = [ORKConsentDocument wrapHTMLBody:[consentSection htmlSummary] mobile:YES];
+        [self.headerView.instructionWebView loadHTMLString:htmlSummary baseURL:ORKCreateRandomBaseURL()];
+    }
+    else {
+        self.headerView.instructionWebView.backgroundColor = UIColor.clearColor;
+        self.headerView.instructionWebView.scrollView.backgroundColor = UIColor.clearColor;
+    }
     
     self.continueSkipContainer.continueEnabled = YES;
     [self.continueSkipContainer updateContinueAndSkipEnabled];
@@ -120,6 +133,8 @@ static NSString *localizedLearnMoreForType(ORKConsentSectionType sectionType) {
     return str;
 }
 
+@interface ORKConsentSceneViewController() <UIWebViewDelegate>
+@end
 
 @implementation ORKConsentSceneViewController
 
@@ -144,8 +159,12 @@ static NSString *localizedLearnMoreForType(ORKConsentSectionType sectionType) {
     _sceneView.continueSkipContainer.continueButtonItem = _continueButtonItem;
     _sceneView.imageView.hidden = _imageHidden;
     
-    if (_section.content.length||_section.htmlContent.length || _section.contentURL) {
+    if (_section.content.length || _section.htmlContent.length || _section.contentURL) {
         _sceneView.headerView.learnMoreButtonItem = [[UIBarButtonItem alloc] initWithTitle:_learnMoreButtonTitle ? : localizedLearnMoreForType(_section.type) style:UIBarButtonItemStylePlain target:self action:@selector(showContent:)];
+    }
+    
+    if (_sceneView.headerView.instructionWebView) {
+        _sceneView.headerView.instructionWebView.delegate = self;
     }
 }
 
@@ -207,6 +226,12 @@ static NSString *localizedLearnMoreForType(ORKConsentSectionType sectionType) {
 
 - (UIModalPresentationStyle)adaptivePresentationStyleForPresentationController:(UIPresentationController *)controller {
     return UIModalPresentationOverFullScreen;
+}
+
+#pragma mark - UIWebViewDelegate
+- (void)webViewDidFinishLoad: (UIWebView *)webView {
+    [_sceneView.headerView addConstraint:[NSLayoutConstraint constraintWithItem:_sceneView.headerView.instructionWebView attribute:NSLayoutAttributeHeight relatedBy:NSLayoutRelationEqual toItem:nil attribute:NSLayoutAttributeNotAnAttribute multiplier:1.0 constant:150]];
+    [_sceneView.headerView setNeedsLayout];
 }
 
 @end

@@ -188,6 +188,14 @@ ORK_CLASS_AVAILABLE
 @property (nonatomic, copy, nullable) NSString *summary;
 
 /**
+ The HTML content used to override the `summary` property if additional formatting is needed. The content should be localized.
+ 
+ In cases where plain text summary text is not sufficient to convey important details
+ during the consent process, you can provide an HTML summary in this property. When you do this, the `htmlSummary` propery takes precedence over the `summary` property.
+ */
+@property (nonatomic, copy, nullable) NSString *htmlSummary;
+
+/**
  The content of the section in a localized string.
  
  In a consent review step or in PDF file generation, the string is printed as the section's
