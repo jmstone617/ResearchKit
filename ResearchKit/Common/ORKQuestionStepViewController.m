@@ -295,6 +295,12 @@ typedef NS_ENUM(NSInteger, ORKQuestionSection) {
     [_tableContainer layoutIfNeeded];
 }
 
+- (void)setBackgroundColor:(UIColor *)backgroundColor {
+    [super setBackgroundColor: backgroundColor];
+    _tableContainer.backgroundColor = backgroundColor;
+    _tableView.backgroundColor = backgroundColor;
+}
+
 - (void)answerDidChange {
     if ([self.questionStep formatRequiresTableView] && !_customQuestionView) {
         [self.tableView reloadData];

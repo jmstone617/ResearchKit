@@ -316,6 +316,10 @@ ORK_CLASS_AVAILABLE
 @property (nonatomic, copy, readonly, nullable) ORKStepResult *result;
 
 /**
+ */
+@property (nonatomic, copy, nullable) UIColor *backgroundColor;
+
+/**
  Add a result to the step view controller's `ORKStepResult`. By default, the property for
  the step view controller's result will instantiate a copy of the result each time it is 
  called. Therefore, the result cannot be mutated by adding a result to its result array.

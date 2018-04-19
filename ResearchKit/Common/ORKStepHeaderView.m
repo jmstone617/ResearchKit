@@ -41,11 +41,15 @@
 @implementation ORKStepHeaderView {
     NSLayoutConstraint *_captionMinBottomSpacingConstraint;
     NSLayoutConstraint *_captionToInstructionConstraint;
+    NSLayoutConstraint *_captionToInstructionWebViewConstraint;
     NSLayoutConstraint *_headerZeroHeightConstraint;
     NSLayoutConstraint *_illustrationToCaptionBaselineConstraint;
     NSLayoutConstraint *_illustrationToCaptionTopConstraint;
     NSLayoutConstraint *_instructionMinBottomSpacingConstraint;
+    NSLayoutConstraint *_instructionWebViewMinBottomSpacingConstraint;
     NSLayoutConstraint *_instructionToLearnMoreConstraint;
+    NSLayoutConstraint *_instructionWebViewToLearnMoreConstraint;
+    NSLayoutConstraint *_instructionWebViewHeightConstraint;
     NSLayoutConstraint *_learnMoreToStepViewConstraint;
     NSLayoutConstraint *_topToIconImageViewConstraint;
 }
@@ -115,6 +119,18 @@
             [self addSubview:_instructionLabel];
         }
         
+        {
+            _instructionWebView = [[UIWebView alloc] initWithFrame:CGRectZero];
+            _instructionWebView.translatesAutoresizingMaskIntoConstraints = NO;
+            _instructionWebView.scrollView.scrollEnabled = NO;
+            _instructionWebView.clipsToBounds = NO;
+            _instructionWebView.scrollView.clipsToBounds = NO;
+            _instructionWebView.opaque = NO;
+            _instructionWebView.backgroundColor = UIColor.clearColor;
+            _instructionWebView.scrollView.backgroundColor = UIColor.clearColor;
+            [self addSubview:_instructionWebView];
+        }
+        
         [_learnMoreButton setContentHuggingPriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
         [_learnMoreButton setContentCompressionResistancePriority:UILayoutPriorityRequired forAxis:UILayoutConstraintAxisVertical];
         
@@ -128,6 +144,9 @@
         _instructionLabel.backgroundColor = [[UIColor greenColor] colorWithAlphaComponent:0.2];
         _instructionLabel.layer.borderColor = [UIColor greenColor].CGColor;
         _instructionLabel.layer.borderWidth = 1.0;
+        _instructionWebView.backgroundColor = [[UIColor orangeColor] colorWithAlphaComponent:0.2];
+        _instructionWebView.layer.borderColor = [UIColor orangeColor].CGColor;
+        _instructionWebView.layer.borderWidth = 1.0;
         self.backgroundColor = [[UIColor purpleColor] colorWithAlphaComponent:0.2];
 #endif
         [self setUpConstraints];
@@ -187,19 +206,22 @@ const CGFloat IconHeight = 60;
     
     BOOL hasCaptionLabel = _captionLabel.text.length > 0 || hasIconView;
     BOOL hasInstructionLabel = _instructionLabel.text.length > 0;
+    BOOL hasInstructionWebView = _instructionWebView.request;
     BOOL hasLearnMoreButton = (_learnMoreButton.alpha > 0);
     
-    ORKVerticalContainerLog(@"hasCaption=%@ hasInstruction=%@ hasLearnMore=%@", @(hasCaption), @(hasInstruction), @(hasLearnMore));
+    ORKVerticalContainerLog(@"hasCaption=%@ hasInstruction=%@ hasInstructionWebView=%@ hasLearnMore=%@", @(hasCaption), @(hasInstruction), @(hasInstructionWebView), @(hasLearnMore));
     
     // If one label is empty and the other is not, then allow the empty label to shrink to nothing
     // and the other label to grow to fill
     UILayoutPriority captionVerticalHugging = hasCaptionLabel && !hasInstructionLabel ? UILayoutPriorityDefaultLow - 1 : UILayoutPriorityDefaultLow;
-    UILayoutPriority instructionVerticalHugging = hasInstructionLabel && !hasCaptionLabel ? UILayoutPriorityDefaultLow - 1 : UILayoutPriorityDefaultLow;
+    UILayoutPriority instructionVerticalHugging = hasInstructionLabel && !hasInstructionWebView && !hasCaptionLabel ? UILayoutPriorityDefaultLow - 1 : UILayoutPriorityDefaultLow;
+    UILayoutPriority instructionWebViewVerticalHugging = hasInstructionWebView && !hasInstructionLabel && !hasCaptionLabel ? UILayoutPriorityDefaultLow - 1 : UILayoutPriorityDefaultLow;
     [_captionLabel setContentHuggingPriority:captionVerticalHugging forAxis:UILayoutConstraintAxisVertical];
     [_instructionLabel setContentHuggingPriority:instructionVerticalHugging forAxis:UILayoutConstraintAxisVertical];
+    [_instructionWebView setContentHuggingPriority:instructionWebViewVerticalHugging forAxis:UILayoutConstraintAxisVertical];
     
     {
-        _headerZeroHeightConstraint.active = !(hasCaptionLabel || hasInstructionLabel || hasLearnMoreButton || hasIconView);
+        _headerZeroHeightConstraint.active = !(hasCaptionLabel || hasInstructionLabel || hasInstructionWebView || hasLearnMoreButton || hasIconView);
     }
     
     {
@@ -215,11 +237,19 @@ const CGFloat IconHeight = 60;
     }
     
     {
-        _captionToInstructionConstraint.constant = hasInstructionLabel ? CaptionBaselineToInstructionBaseline_WithInstruction : CaptionBaselineToInstructionBaseline_NoInstruction;
+        if (hasInstructionLabel) {
+            _captionToInstructionConstraint.constant = CaptionBaselineToInstructionBaseline_WithInstruction;
+            _captionToInstructionWebViewConstraint.constant = CaptionBaselineToInstructionBaseline_NoInstruction;
+        }
+        else if (hasInstructionWebView) {
+            _captionToInstructionConstraint.constant = CaptionBaselineToInstructionBaseline_NoInstruction;
+            _captionToInstructionWebViewConstraint.constant = CaptionBaselineToInstructionBaseline_WithInstruction;
+        }
     }
     
     {
         _instructionToLearnMoreConstraint.constant = hasLearnMoreButton ? InstructionBaselineToLearnMoreBaseline : 0;
+        _instructionWebViewToLearnMoreConstraint.constant = hasLearnMoreButton ? InstructionBaselineToLearnMoreBaseline : 0;
     }
     
     {
@@ -234,6 +264,11 @@ const CGFloat IconHeight = 60;
     {
         _instructionMinBottomSpacingConstraint.constant = InstructionBaselineToStepViewTopWithNoLearnMore;
         _instructionMinBottomSpacingConstraint.active = hasInstructionLabel && !(hasLearnMoreButton);
+    }
+    
+    {
+        _instructionWebViewMinBottomSpacingConstraint.constant = InstructionBaselineToStepViewTopWithNoLearnMore;
+        _instructionWebViewMinBottomSpacingConstraint.active = hasInstructionWebView && !(hasLearnMoreButton);
     }
 }
 
@@ -256,10 +291,11 @@ const CGFloat IconHeight = 60;
     widthConstraint.priority = UILayoutPriorityDefaultLow - 1;
     [constraints addObject:widthConstraint];
     
-    NSArray *views = @[_iconImageView, _captionLabel, _instructionLabel, _learnMoreButton];
+    NSArray *views = @[_iconImageView, _captionLabel, _instructionLabel, _instructionWebView, _learnMoreButton];
     [_iconImageView setContentHuggingPriority:UILayoutPriorityFittingSizeLevel forAxis:UILayoutConstraintAxisHorizontal];
     [_captionLabel setContentHuggingPriority:UILayoutPriorityFittingSizeLevel forAxis:UILayoutConstraintAxisHorizontal];
     [_instructionLabel setContentHuggingPriority:UILayoutPriorityFittingSizeLevel forAxis:UILayoutConstraintAxisHorizontal];
+    [_instructionWebView setContentHuggingPriority:UILayoutPriorityFittingSizeLevel forAxis:UILayoutConstraintAxisHorizontal];
     [_learnMoreButton setContentHuggingPriority:UILayoutPriorityFittingSizeLevel forAxis:UILayoutConstraintAxisHorizontal];
     ORKEnableAutoLayoutForViews(views);
     
@@ -309,6 +345,17 @@ const CGFloat IconHeight = 60;
     }
     
     {
+        _captionToInstructionWebViewConstraint = [NSLayoutConstraint constraintWithItem:_instructionWebView
+                                                                              attribute:NSLayoutAttributeFirstBaseline
+                                                                              relatedBy:NSLayoutRelationEqual
+                                                                                 toItem:_captionLabel
+                                                                              attribute:NSLayoutAttributeLastBaseline
+                                                                             multiplier:1.0
+                                                                               constant:36.0];
+        [constraints addObject:_captionToInstructionWebViewConstraint];
+    }
+    
+    {
         _instructionToLearnMoreConstraint = [NSLayoutConstraint constraintWithItem:_learnMoreButton
                                                                          attribute:NSLayoutAttributeFirstBaseline
                                                                          relatedBy:NSLayoutRelationEqual
@@ -317,6 +364,17 @@ const CGFloat IconHeight = 60;
                                                                         multiplier:1.0
                                                                           constant:30.0];
         [constraints addObject:_instructionToLearnMoreConstraint];
+    }
+    
+    {
+        _instructionWebViewToLearnMoreConstraint = [NSLayoutConstraint constraintWithItem:_learnMoreButton
+                                                                                attribute:NSLayoutAttributeFirstBaseline
+                                                                                relatedBy:NSLayoutRelationEqual
+                                                                                   toItem:_instructionWebView
+                                                                                attribute:NSLayoutAttributeLastBaseline
+                                                                               multiplier:1.0
+                                                                                 constant:30.0];
+        [constraints addObject:_instructionWebViewToLearnMoreConstraint];
     }
     
     {
@@ -377,6 +435,12 @@ const CGFloat IconHeight = 60;
                                                                                constant:44.0];
         _instructionMinBottomSpacingConstraint.priority = UILayoutPriorityDefaultHigh - 2;
         [constraints addObject:_instructionMinBottomSpacingConstraint];
+    }
+    
+    {
+        _instructionWebViewMinBottomSpacingConstraint = [NSLayoutConstraint constraintWithItem:self                             attribute:NSLayoutAttributeBottom relatedBy:NSLayoutRelationEqual toItem:_instructionWebView attribute:NSLayoutAttributeLastBaseline multiplier:1.0 constant:44.0];
+        _instructionWebViewMinBottomSpacingConstraint.priority = UILayoutPriorityDefaultHigh - 2;
+        [constraints addObject:_instructionWebViewMinBottomSpacingConstraint];
     }
     
     for (UIView *view in views) {

@@ -323,6 +323,10 @@
     return self.isBeingReviewed && _parentReviewStep.isStandalone;
 }
 
+- (void)setBackgroundColor:(UIColor *)backgroundColor {
+    self.view.backgroundColor = backgroundColor;
+}
+
 #pragma mark - Action Handlers
 
 - (void)goForward {
